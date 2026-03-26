@@ -1,7 +1,9 @@
-const CACHE_SHELL = 'boda-shell-v1';
-const CACHE_IMAGES = 'boda-images-v1';
+const CACHE_SHELL = 'boda-shell-v2';
+const CACHE_IMAGES = 'boda-images-v2';
 
 // Al instalar: cachear archivos de la app
+// Sin skipWaiting() — el SW espera a que no haya páginas abiertas antes de activarse
+// Esto evita el bug de iOS Safari donde clients.claim() causa recarga inesperada
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_SHELL).then(cache =>
@@ -13,10 +15,11 @@ self.addEventListener('install', event => {
             ])
         )
     );
-    self.skipWaiting();
 });
 
 // Al activar: limpiar cachés viejos
+// Sin clients.claim() — no tomamos control de páginas ya abiertas
+// (evita el controllerchange que provoca recarga en iOS Safari)
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys =>
@@ -27,7 +30,6 @@ self.addEventListener('activate', event => {
             )
         )
     );
-    self.clients.claim();
 });
 
 // Fetch: cache-first para imágenes, network-first para todo lo demás

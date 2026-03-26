@@ -112,6 +112,56 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- DEBUG PANEL — borrar después de testear -->
+    <div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font:12px monospace;padding:8px;z-index:99999;max-height:40vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <b style="color:#ff0">DEBUG</b>
+            <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:#f00;color:#fff;border:none;padding:2px 8px;border-radius:3px;">X</button>
+        </div>
+        <div id="dbgLazy">Lazy: queue=0 active=0 loaded=0 errors=0</div>
+        <div id="dbgSW">SW: -</div>
+        <div id="dbgNet">Net: -</div>
+        <div id="dbgLog" style="color:#aaa;margin-top:4px;"></div>
+    </div>
+    <script>
+    // Interceptar errores globales
+    window.onerror = (msg, src, line) => dbgLog('ERROR: ' + msg + ' (' + src?.split('/').pop() + ':' + line + ')');
+    window.addEventListener('unhandledrejection', e => dbgLog('REJECT: ' + e.reason));
+
+    // SW status
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(r => {
+            document.getElementById('dbgSW').textContent = 'SW: ' + (r ? 'registrado (' + r.scope + ')' : 'ninguno');
+        });
+    }
+
+    // Interceptar fetch para contar peticiones
+    let netOk = 0, netErr = 0, netPending = 0;
+    const origFetch = window.fetch;
+    window.fetch = function(...args) {
+        netPending++;
+        updateNet();
+        return origFetch.apply(this, args)
+            .then(r => { netPending--; if(r.ok) netOk++; else netErr++; updateNet(); return r; })
+            .catch(e => { netPending--; netErr++; updateNet(); throw e; });
+    };
+    function updateNet() {
+        document.getElementById('dbgNet').textContent = `Net: ok=${netOk} err=${netErr} pending=${netPending}`;
+    }
+
+    // Log helper
+    function dbgLog(msg) {
+        const el = document.getElementById('dbgLog');
+        el.innerHTML = msg + '<br>' + el.innerHTML;
+        el.innerHTML = el.innerHTML.split('<br>').slice(0,8).join('<br>');
+    }
+
+    // Exponer función para actualizar stats del lazy loader
+    window.updateDbgLazy = function(q, a, loaded, errors) {
+        document.getElementById('dbgLazy').textContent = `Lazy: queue=${q} active=${a} loaded=${loaded} errors=${errors}`;
+    };
+    </script>
+
     <script src="js/selector.js"></script>
 </body>
 </html>

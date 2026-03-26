@@ -349,6 +349,8 @@ function renderGallery() {
 let lazyObserver = null;
 let lazyQueue = [];
 let lazyActive = 0;
+let lazyLoaded = 0;
+let lazyErrors = 0;
 const LAZY_MAX = 4;
 
 function lazyLoadNext() {
@@ -356,10 +358,16 @@ function lazyLoadNext() {
         const img = lazyQueue.shift();
         if (!img.dataset.src || img.classList.contains('lazy-loaded')) continue;
         lazyActive++;
-        img.onload = img.onerror = () => { lazyActive--; lazyLoadNext(); };
+        img.onload = () => { lazyActive--; lazyLoaded++; dbgLazy(); lazyLoadNext(); };
+        img.onerror = () => { lazyActive--; lazyErrors++; dbgLazy(); lazyLoadNext(); };
         img.src = img.dataset.src;
         img.classList.add('lazy-loaded');
+        dbgLazy();
     }
+}
+
+function dbgLazy() {
+    if (window.updateDbgLazy) window.updateDbgLazy(lazyQueue.length, lazyActive, lazyLoaded, lazyErrors);
 }
 
 function setupLazyLoad() {

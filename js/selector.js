@@ -490,22 +490,23 @@ function openModal(index) {
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollPositionBeforeModal}px`;
     document.body.style.width = '100%';
+    if (window.updateDbgModal) window.updateDbgModal('abierto #' + (index+1), scrollPositionBeforeModal);
 }
 
 function closeModal() {
+    if (window.updateDbgModal) window.updateDbgModal('cerrando...', scrollPositionBeforeModal);
     document.getElementById('photoModal').classList.remove('active');
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
     modalOpen = false;
-    // Restaurar scroll — usar forma de dos argumentos (compatible con todos los móviles)
-    // behavior:'instant' no funciona en Safari/Android más viejos y el scrollTo falla
     document.documentElement.scrollTop = scrollPositionBeforeModal;
     document.body.scrollTop = scrollPositionBeforeModal;
     window.scrollTo(0, scrollPositionBeforeModal);
     try { localStorage.setItem(KEY_SCROLL, scrollPositionBeforeModal); } catch (e) {}
     currentPhotoIndex = null;
+    if (window.updateDbgModal) window.updateDbgModal('cerrado, scroll=' + window.scrollY, scrollPositionBeforeModal);
 }
 
 // ========================================

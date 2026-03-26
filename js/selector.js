@@ -219,6 +219,7 @@ let touchStartX = 0;
 let touchStartY = 0;
 let scrollPositionBeforeModal = 0;
 let scrollSaveTimer = null;
+let modalOpen = false;
 
 // ========================================
 // LOCAL STORAGE
@@ -433,6 +434,7 @@ function openModal(index) {
     modal.classList.add('active');
 
     scrollPositionBeforeModal = window.scrollY;
+    modalOpen = true;
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollPositionBeforeModal}px`;
@@ -445,7 +447,11 @@ function closeModal() {
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
-    window.scrollTo(0, scrollPositionBeforeModal);
+    // behavior:'instant' evita el flash de scrollY=0 antes de restaurar
+    window.scrollTo({ top: scrollPositionBeforeModal, behavior: 'instant' });
+    modalOpen = false;
+    // Guardar posición correcta después de restaurar
+    try { localStorage.setItem(KEY_SCROLL, scrollPositionBeforeModal); } catch (e) {}
     currentPhotoIndex = null;
 }
 
@@ -633,8 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Guardar scroll con debounce (no spamear localStorage en cada pixel)
+// Guardar scroll con debounce — pausar mientras modal está abierto
+// (cuando body es position:fixed, scrollY=0 y guardaría posición incorrecta)
 window.addEventListener('scroll', () => {
+    if (modalOpen) return;
     clearTimeout(scrollSaveTimer);
     scrollSaveTimer = setTimeout(saveScroll, 300);
 }, { passive: true });

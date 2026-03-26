@@ -206,6 +206,9 @@ const photos = [
 ];
 
 const STORAGE_KEY = 'boda_herrera_zavala_photo_selections';
+const KEY_FILTER   = 'boda_filter';
+const KEY_SCROLL   = 'boda_scroll';
+const KEY_LAST     = 'boda_last_photo';
 const LIMITES = { impresion: 50 };
 const COSTO_FOTO_ADICIONAL = 25;
 
@@ -215,6 +218,7 @@ let currentFilter = 'all';
 let touchStartX = 0;
 let touchStartY = 0;
 let scrollPositionBeforeModal = 0;
+let scrollSaveTimer = null;
 
 // ========================================
 // LOCAL STORAGE
@@ -231,6 +235,24 @@ function saveSelections() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(photoSelections));
     } catch (e) {
         showToast('Error al guardar. Verifica el espacio del navegador.', 'error');
+    }
+}
+
+function saveScroll() {
+    try { localStorage.setItem(KEY_SCROLL, window.scrollY); } catch (e) {}
+}
+
+function restoreState() {
+    // Restaurar filtro
+    const savedFilter = localStorage.getItem(KEY_FILTER);
+    if (savedFilter) setFilter(savedFilter);
+
+    // Restaurar scroll (con pequeño delay para que el DOM esté listo)
+    const savedScroll = parseInt(localStorage.getItem(KEY_SCROLL) || '0');
+    if (savedScroll > 0) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+        });
     }
 }
 
@@ -377,6 +399,7 @@ function setFilter(filter) {
     document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
     const btn = document.querySelector(`[data-filter="${filter}"]`);
     if (btn) btn.classList.add('active');
+    try { localStorage.setItem(KEY_FILTER, filter); } catch (e) {}
 }
 
 function updateFilterButtons() {
@@ -392,6 +415,7 @@ function updateFilterButtons() {
 // ========================================
 function openModal(index) {
     currentPhotoIndex = index;
+    try { localStorage.setItem(KEY_LAST, index); } catch (e) {}
     const modal = document.getElementById('photoModal');
     const photo = photos[index];
     const num = `Foto ${index + 1}`;
@@ -560,6 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGallery();
     updateStats();
     updateFilterButtons();
+    restoreState();
 
     document.getElementById('btnFilterAll')?.addEventListener('click', () => setFilter('all'));
     document.getElementById('btnFilterImpresion')?.addEventListener('click', () => setFilter('impresion'));
@@ -608,5 +633,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-document.addEventListener('visibilitychange', () => { if (document.hidden) saveSelections(); });
-window.addEventListener('beforeunload', () => saveSelections());
+// Guardar scroll con debounce (no spamear localStorage en cada pixel)
+window.addEventListener('scroll', () => {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(saveScroll, 300);
+}, { passive: true });
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { saveSelections(); saveScroll(); }
+});
+window.addEventListener('beforeunload', () => { saveSelections(); saveScroll(); });
+
+// Registrar Service Worker (cachea imágenes localmente)
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+}

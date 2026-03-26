@@ -483,30 +483,18 @@ function openModal(index) {
     });
 
     modal.classList.add('active');
-
-    scrollPositionBeforeModal = window.scrollY;
     modalOpen = true;
     document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollPositionBeforeModal}px`;
-    document.body.style.width = '100%';
-    if (window.updateDbgModal) window.updateDbgModal('abierto #' + (index+1), scrollPositionBeforeModal);
+    if (window.updateDbgModal) window.updateDbgModal('abierto #' + (index+1), window.scrollY);
 }
 
 function closeModal() {
-    if (window.updateDbgModal) window.updateDbgModal('cerrando...', scrollPositionBeforeModal);
+    if (window.updateDbgModal) window.updateDbgModal('cerrando...', window.scrollY);
     document.getElementById('photoModal').classList.remove('active');
     document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
     modalOpen = false;
-    document.documentElement.scrollTop = scrollPositionBeforeModal;
-    document.body.scrollTop = scrollPositionBeforeModal;
-    window.scrollTo(0, scrollPositionBeforeModal);
-    try { localStorage.setItem(KEY_SCROLL, scrollPositionBeforeModal); } catch (e) {}
     currentPhotoIndex = null;
-    if (window.updateDbgModal) window.updateDbgModal('cerrado, scroll=' + window.scrollY, scrollPositionBeforeModal);
+    if (window.updateDbgModal) window.updateDbgModal('cerrado', window.scrollY);
 }
 
 // ========================================

@@ -262,6 +262,7 @@ function clearAllSelections() {
         photoSelections = {};
         saveSelections();
         renderGallery();
+        setupLazyLoad();
         updateStats();
         updateFilterButtons();
         showToast('Todas las selecciones han sido eliminadas', 'success');
@@ -329,7 +330,7 @@ function renderGallery() {
 
         card.innerHTML = `
             <div class="photo-image-container">
-                <img src="${photo}" alt="Foto ${index + 1}" loading="lazy">
+                <img data-src="${photo}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'/%3E" alt="Foto ${index + 1}" class="lazy-img">
             </div>
             <div class="photo-number">Foto ${index + 1}</div>
             ${badgesHTML}
@@ -340,6 +341,48 @@ function renderGallery() {
     });
 
     applyFilter();
+}
+
+// ========================================
+// LAZY LOADER CON COLA (máx 4 concurrentes — evita throttle de GitHub en iOS)
+// ========================================
+let lazyObserver = null;
+let lazyQueue = [];
+let lazyActive = 0;
+const LAZY_MAX = 4;
+
+function lazyLoadNext() {
+    while (lazyActive < LAZY_MAX && lazyQueue.length > 0) {
+        const img = lazyQueue.shift();
+        if (!img.dataset.src || img.classList.contains('lazy-loaded')) continue;
+        lazyActive++;
+        img.onload = img.onerror = () => { lazyActive--; lazyLoadNext(); };
+        img.src = img.dataset.src;
+        img.classList.add('lazy-loaded');
+    }
+}
+
+function setupLazyLoad() {
+    if (lazyObserver) lazyObserver.disconnect();
+    lazyQueue = [];
+    lazyActive = 0;
+
+    lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                lazyObserver.unobserve(img);
+                if (!img.classList.contains('lazy-loaded')) {
+                    lazyQueue.push(img);
+                    lazyLoadNext();
+                }
+            }
+        });
+    }, { rootMargin: '300px 0px' });
+
+    document.querySelectorAll('img.lazy-img:not(.lazy-loaded)').forEach(img => {
+        lazyObserver.observe(img);
+    });
 }
 
 // ========================================
@@ -590,6 +633,7 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', () => {
     loadSelections();
     renderGallery();
+    setupLazyLoad();
     updateStats();
     updateFilterButtons();
     restoreState();

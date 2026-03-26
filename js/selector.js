@@ -447,10 +447,12 @@ function closeModal() {
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
-    // behavior:'instant' evita el flash de scrollY=0 antes de restaurar
-    window.scrollTo({ top: scrollPositionBeforeModal, behavior: 'instant' });
     modalOpen = false;
-    // Guardar posición correcta después de restaurar
+    // Restaurar scroll — usar forma de dos argumentos (compatible con todos los móviles)
+    // behavior:'instant' no funciona en Safari/Android más viejos y el scrollTo falla
+    document.documentElement.scrollTop = scrollPositionBeforeModal;
+    document.body.scrollTop = scrollPositionBeforeModal;
+    window.scrollTo(0, scrollPositionBeforeModal);
     try { localStorage.setItem(KEY_SCROLL, scrollPositionBeforeModal); } catch (e) {}
     currentPhotoIndex = null;
 }

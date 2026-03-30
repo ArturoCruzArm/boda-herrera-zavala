@@ -1,4 +1,4 @@
-const CACHE_SHELL = 'boda-shell-v3';
+const CACHE_SHELL = 'boda-shell-v4';
 const CACHE_IMAGES = 'boda-images-v2';
 
 // Al instalar: cachear archivos de la app

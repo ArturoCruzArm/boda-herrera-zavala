@@ -204,6 +204,11 @@ const photos = [
     "imagenes/DSC_0638.webp","imagenes/DSC_0639.webp","imagenes/DSC_0640.webp","imagenes/DSC_0641.webp","imagenes/DSC_0642.webp",
     "imagenes/DSC_0643.webp"
 ];
+// Thumbnail helper: usa thumb/ en grid para ahorrar RAM en moviles
+function getThumbPath(fullPath) {
+    return fullPath.replace('imagenes/', 'imagenes/thumb/');
+}
+
 
 const STORAGE_KEY = 'boda_herrera_zavala_photo_selections';
 const KEY_FILTER   = 'boda_filter';
